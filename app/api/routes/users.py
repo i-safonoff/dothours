@@ -50,6 +50,18 @@ def get_my_stats(
     )
 
 
+@router.get("/search", response_model=UserOut)
+def search_user_by_email(
+    email: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> UserOut:
+    user = db.scalar(select(User).where(User.email == email))
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return UserOut.model_validate(user)
+
+
 @router.get("/{user_id}", response_model=UserOut)
 def get_user(user_id: uuid.UUID, db: Session = Depends(get_db)) -> UserOut:
     user = db.get(User, user_id)
