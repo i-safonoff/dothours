@@ -1,0 +1,44 @@
+[project]
+name = "dothours"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "antifess",email = "safonoff.lit@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi (>=0.141.1,<0.142.0)",
+    "uvicorn (>=0.52.1,<0.53.0)",
+    "sqlalchemy (>=2.0.52,<3.0.0)",
+    "psycopg2-binary (>=2.9.12,<3.0.0)",
+    "alembic (>=1.19.1,<2.0.0)",
+    "pydantic-settings (>=2.15.0,<3.0.0)",
+    "pyjwt (>=2.13.0,<3.0.0)",
+    "bcrypt (>=5.0.0,<6.0.0)",
+    "python-multipart (>=0.0.32,<0.0.33)",
+    "email-validator (>=2.3.0,<3.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^9.1.1"
+httpx = "^0.28.1"
+pytest-cov = "^7.1.0"
+ruff = "^0.16.3"
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["B008"]
+
+[tool.pytest.ini_options]
+addopts = "--cov=app --cov-report=term-missing"
+
