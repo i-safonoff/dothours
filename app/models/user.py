@@ -20,6 +20,8 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     name: Mapped[str] = mapped_column(String(120), nullable=False)
+    avatar_color: Mapped[str] = mapped_column(String(7), default="#9B6BFF", nullable=False)
+    status: Mapped[str] = mapped_column(String(140), default="", nullable=False)
     daily_goal_minutes: Mapped[int] = mapped_column(Integer, default=120, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

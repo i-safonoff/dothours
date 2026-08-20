@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db
+from app.core.avatar import color_for
 from app.core.security import create_access_token, hash_password, verify_password
 from app.models.user import User
 from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse
@@ -16,7 +17,12 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> TokenRe
     if existing is not None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
 
-    user = User(email=payload.email, password_hash=hash_password(payload.password), name=payload.name)
+    user = User(
+        email=payload.email,
+        password_hash=hash_password(payload.password),
+        name=payload.name,
+        avatar_color=color_for(payload.email),
+    )
     db.add(user)
     db.commit()
     db.refresh(user)

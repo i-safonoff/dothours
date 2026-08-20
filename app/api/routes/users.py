@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user, get_db
 from app.models.city import DailyProgress
 from app.models.user import User
-from app.schemas.user import UserOut, UserStats, UserUpdate
+from app.schemas.user import UserOut, UserPublic, UserStats, UserUpdate
 from app.services.tracking import compute_streak
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -27,6 +27,10 @@ def update_me(
 ) -> UserOut:
     if payload.name is not None:
         current_user.name = payload.name
+    if payload.status is not None:
+        current_user.status = payload.status
+    if payload.avatar_color is not None:
+        current_user.avatar_color = payload.avatar_color
     if payload.daily_goal_minutes is not None:
         current_user.daily_goal_minutes = payload.daily_goal_minutes
     db.commit()
@@ -62,9 +66,9 @@ def search_user_by_email(
     return UserOut.model_validate(user)
 
 
-@router.get("/{user_id}", response_model=UserOut)
-def get_user(user_id: uuid.UUID, db: Session = Depends(get_db)) -> UserOut:
+@router.get("/{user_id}", response_model=UserPublic)
+def get_user(user_id: uuid.UUID, db: Session = Depends(get_db)) -> UserPublic:
     user = db.get(User, user_id)
     if user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    return UserOut.model_validate(user)
+    return UserPublic.model_validate(user)
