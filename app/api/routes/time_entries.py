@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db
+from app.core.metrics import active_timers, minutes_tracked_total, timers_started_total, timers_stopped_total
 from app.events import types
 from app.events.bus import bus, user_channel
 from app.models.category import Category
@@ -61,6 +62,8 @@ def start_entry(
     db.commit()
     db.refresh(entry)
 
+    timers_started_total.inc()
+    active_timers.inc()
     bus.publish(user_channel(current_user.id), types.TIMER_STARTED, {"entry_id": str(entry.id)})
     return TimeEntryOut.model_validate(entry)
 
@@ -89,10 +92,13 @@ def stop_entry(
             minutes,
             paired_task_id=entry.paired_task_id,
         )
+        minutes_tracked_total.labels(category.building_family.value, TimeEntrySource.timer.value).inc(minutes)
 
     db.commit()
     db.refresh(entry)
 
+    timers_stopped_total.inc()
+    active_timers.dec()
     bus.publish(
         user_channel(current_user.id),
         types.TIMER_STOPPED,
@@ -141,6 +147,7 @@ def create_manual_entry(
             minutes,
             paired_task_id=payload.paired_task_id,
         )
+        minutes_tracked_total.labels(category.building_family.value, TimeEntrySource.manual.value).inc(minutes)
 
     db.commit()
     db.refresh(entry)
@@ -174,8 +181,12 @@ def delete_entry(
     db: Session = Depends(get_db),
 ) -> None:
     entry = _get_owned_entry(db, current_user, entry_id)
+    was_running = entry.ended_at is None
     db.delete(entry)
     db.commit()
+
+    if was_running:
+        active_timers.dec()
 
 
 @router.get("/summary", response_model=TimeEntrySummary)

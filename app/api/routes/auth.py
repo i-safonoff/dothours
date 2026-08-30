@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db
 from app.core.avatar import color_for
+from app.core.metrics import registrations_total
 from app.core.security import create_access_token, hash_password, verify_password
 from app.models.user import User
 from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse
@@ -26,6 +27,7 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> TokenRe
     db.add(user)
     db.commit()
     db.refresh(user)
+    registrations_total.inc()
 
     token = create_access_token(subject=str(user.id))
     return TokenResponse(access_token=token, user=UserOut.model_validate(user))
