@@ -14,6 +14,7 @@ from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
+from app.core.metrics import ws_connections
 from app.core.security import decode_access_token
 from app.events.bus import bus, company_channel, user_channel
 from app.models.user import User
@@ -61,15 +62,19 @@ async def realtime(
     await asyncio.to_thread(db.rollback)
 
     await websocket.accept()
+    ws_connections.inc()
 
-    async with bus.subscribe(channels) as events:
-        pump = asyncio.create_task(_pump(websocket, events))
-        try:
-            await _read_client(websocket)
-        except WebSocketDisconnect:
-            pass
-        finally:
-            pump.cancel()
+    try:
+        async with bus.subscribe(channels) as events:
+            pump = asyncio.create_task(_pump(websocket, events))
+            try:
+                await _read_client(websocket)
+            except WebSocketDisconnect:
+                pass
+            finally:
+                pump.cancel()
+    finally:
+        ws_connections.dec()
 
 
 async def _pump(websocket: WebSocket, events) -> None:

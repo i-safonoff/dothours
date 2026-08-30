@@ -34,6 +34,15 @@ docker compose -f docker-compose.yml -f docker-compose.observability.yml up --bu
 | `dothours_minutes_tracked_total` | counter | `building_family`, `source` | минуты, зачтённые в город |
 | `dothours_buildings_level_up_total` | counter | `building_family`, `owner_type`, `level` | апгрейды зданий |
 | `dothours_active_timers` | gauge | — | таймеры, идущие прямо сейчас |
+| `dothours_notifications_created_total` | counter | `kind` | созданные уведомления |
+| `dothours_events_published_total` | counter | `event` | события, отданные в шину |
+| `dothours_ws_connections` | gauge | — | открытые WebSocket-соединения в этом процессе |
+| `dothours_background_task_runs_total` | counter | `task`, `outcome` | запуски Celery-задач |
+| `dothours_background_task_duration_seconds` | histogram | `task` | длительность Celery-задач |
+
+`dothours_ws_connections` — процессный гейдж: при нескольких воркерах
+суммируйте по инстансам (`sum(dothours_ws_connections)`), как и сделано в
+дашборде.
 
 `dothours_active_timers` инкрементится на старте и декрементится на
 стопе/удалении записи, а на старте приложения синхронизируется с БД — иначе
@@ -54,4 +63,5 @@ docker compose -f docker-compose.yml -f docker-compose.observability.yml up --bu
 
 - Алертов — правила нужно писать под реальные SLO, а их пока нет.
 - Трейсинга (OpenTelemetry) — на текущем размере сервиса метрик и логов хватает.
-- Метрик Celery/WebSocket — приедут вместе с самими ветками.
+- Экспортера Redis — брокер пока не бывает узким местом; добавляется одной
+  строкой в `docker-compose.observability.yml`, когда понадобится.

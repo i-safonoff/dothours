@@ -6,6 +6,7 @@ from collections.abc import Callable
 from sqlalchemy.orm import Session
 
 from app.core.database import SessionLocal
+from app.core.metrics import background_task_duration_seconds, background_task_runs_total
 from app.worker import jobs
 from app.worker.celery_app import celery_app
 
@@ -13,14 +14,17 @@ logger = logging.getLogger("dothours.tasks")
 
 
 def _run(name: str, job: Callable[[Session], int]) -> int:
-    with SessionLocal() as db:
+    with background_task_duration_seconds.labels(name).time(), SessionLocal() as db:
         try:
             affected = job(db)
             db.commit()
         except Exception:
             db.rollback()
+            background_task_runs_total.labels(name, "failure").inc()
             logger.exception("Task %s failed", name)
             raise
+
+    background_task_runs_total.labels(name, "success").inc()
     logger.info("Task %s affected %s rows", name, affected)
     return affected
 

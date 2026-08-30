@@ -1,6 +1,9 @@
 import re
 
+import pytest
 from fastapi.testclient import TestClient
+from prometheus_client import REGISTRY, generate_latest
+from sqlalchemy.orm import Session
 
 from tests.conftest import auth_headers, register_and_login
 from tests.test_categories import create_category
@@ -85,3 +88,76 @@ def test_every_response_carries_a_request_id(client: TestClient) -> None:
 
     echoed = client.get("/health", headers={"X-Request-ID": "abc123"})
     assert echoed.headers["X-Request-ID"] == "abc123"
+
+
+def test_realtime_and_notification_metrics_move(client: TestClient, db_session: Session) -> None:
+    from app.models.enums import NotificationKind
+    from app.services.notifications import create_notification
+    from tests.test_notifications import get_user
+
+    before = client.get("/metrics").text
+    events_before = metric_value(before, "dothours_events_published_total", '{event="notification.created"}')
+    created_before = metric_value(before, "dothours_notifications_created_total", '{kind="streak_at_risk"}')
+
+    register_and_login(client, email="ann@example.com", name="Ann")
+    ann = get_user(db_session, "ann@example.com")
+    create_notification(db_session, ann.id, NotificationKind.streak_at_risk, "Стрик")
+    db_session.commit()
+
+    after = client.get("/metrics").text
+    assert metric_value(after, "dothours_events_published_total", '{event="notification.created"}') == events_before + 1
+    assert metric_value(after, "dothours_notifications_created_total", '{kind="streak_at_risk"}') == created_before + 1
+
+
+def test_websocket_connection_gauge_tracks_open_sockets(client: TestClient) -> None:
+    session = register_and_login(client)
+    before = metric_value(client.get("/metrics").text, "dothours_ws_connections")
+
+    with client.websocket_connect(f"/api/v1/ws?token={session['token']}"):
+        during = metric_value(client.get("/metrics").text, "dothours_ws_connections")
+        assert during == before + 1
+
+    assert metric_value(client.get("/metrics").text, "dothours_ws_connections") == before
+
+
+def test_background_task_metrics_record_success_and_failure(
+    db_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from app.worker import tasks
+
+    before = metric_value(
+        _metrics_text(), "dothours_background_task_runs_total", '{outcome="success",task="cleanup_read_notifications"}'
+    )
+    monkeypatch.setattr(tasks, "SessionLocal", lambda: db_session)
+    monkeypatch.setattr(tasks.jobs, "cleanup_read_notifications", lambda db: 0)
+    tasks.cleanup_read_notifications()
+
+    assert (
+        metric_value(
+            _metrics_text(),
+            "dothours_background_task_runs_total",
+            '{outcome="success",task="cleanup_read_notifications"}',
+        )
+        == before + 1
+    )
+
+    def boom(db: Session) -> int:
+        raise RuntimeError("job exploded")
+
+    monkeypatch.setattr(tasks.jobs, "cleanup_read_notifications", boom)
+    with pytest.raises(RuntimeError):
+        tasks.cleanup_read_notifications()
+
+    assert (
+        metric_value(
+            _metrics_text(),
+            "dothours_background_task_runs_total",
+            '{outcome="failure",task="cleanup_read_notifications"}',
+        )
+        == 1
+    )
+
+
+def _metrics_text() -> str:
+    """Scrape the default registry directly — this test has no HTTP client."""
+    return generate_latest(REGISTRY).decode()
