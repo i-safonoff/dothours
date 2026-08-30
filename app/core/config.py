@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     # How long a cached leaderboard row is served before it is recomputed on read.
     leaderboard_ttl_seconds: int = 300
 
+    celery_broker_url: str = "redis://localhost:6379/0"
+    celery_result_backend: str = "redis://localhost:6379/1"
+
 
 @lru_cache
 def get_settings() -> Settings:

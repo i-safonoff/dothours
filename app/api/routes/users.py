@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db
+from app.core.timezones import is_known_timezone
 from app.models.city import DailyProgress
 from app.models.user import User
 from app.schemas.user import UserOut, UserPublic, UserStats, UserUpdate
@@ -33,6 +34,10 @@ def update_me(
         current_user.avatar_color = payload.avatar_color
     if payload.daily_goal_minutes is not None:
         current_user.daily_goal_minutes = payload.daily_goal_minutes
+    if payload.timezone is not None:
+        if not is_known_timezone(payload.timezone):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unknown timezone")
+        current_user.timezone = payload.timezone
     db.commit()
     db.refresh(current_user)
     return UserOut.model_validate(current_user)

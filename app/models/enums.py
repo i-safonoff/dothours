@@ -42,6 +42,14 @@ class LeaderboardPeriod(enum.StrEnum):
     monthly = "monthly"
 
 
+class NotificationKind(enum.StrEnum):
+    daily_reminder = "daily_reminder"
+    streak_at_risk = "streak_at_risk"
+    paired_task_expired = "paired_task_expired"
+    paired_task_completed = "paired_task_completed"
+    friend_request = "friend_request"
+
+
 class FriendshipStatus(enum.StrEnum):
     pending = "pending"
     accepted = "accepted"

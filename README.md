@@ -14,6 +14,7 @@ tracked hours, friends, and paired (co-op) challenges.
 - **FastAPI** + **SQLAlchemy 2.0** (sync) + **PostgreSQL**
 - **Alembic** for migrations
 - **JWT** bearer auth (PyJWT + bcrypt)
+- **Celery** + **Redis** for scheduled notifications
 - **pytest** (SQLite in-memory for tests, no external DB needed)
 - **Docker Compose** for a one-command local stack
 
@@ -59,6 +60,7 @@ app/
   services/        business logic (streaks, city-building leveling)
   building_families.py  static building-level catalog (not a DB table)
   city_districts.py     static district catalog, synced into city_districts
+  worker/          Celery app, beat schedule, and the jobs behind the tasks
 alembic/           migrations
 tests/             pytest suite, one file per resource
 docs/API_SPEC.md   full staged API spec — all stages are implemented
@@ -83,5 +85,8 @@ docs/API_SPEC.md   full staged API spec — all stages are implemented
   public companies, refreshed lazily on read
 - **Isometric layout** — districts and a deterministic tile, rotation and
   variant per building, so a city renders the same everywhere
+- **Notifications** — in-app inbox fed by Celery beat: daily reminders and
+  streak warnings in the user's own timezone, expiry of overdue co-op tasks
+  (see [`docs/NOTIFICATIONS.md`](docs/NOTIFICATIONS.md))
 
 Every stage of the spec is now implemented.
