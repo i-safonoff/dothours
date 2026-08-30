@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.building_families import level_for_hours
 from app.models.city import CityBuilding, DailyProgress
+from app.models.company import CompanyMembership
 from app.models.enums import OwnerType, PairedTaskStatus, PairedTaskTargetType
 from app.models.paired_task import PairedTask, PairedTaskParticipant
 from app.models.user import User
@@ -22,8 +23,17 @@ def apply_completed_entry(
     """Update the daily progress and city-building caches after a time entry stops."""
     _upsert_daily_progress(db, user, entry_date, minutes)
     _increment_city_building(db, OwnerType.user, user.id, building_family, minutes)
+    _apply_company_minutes(db, user.id, building_family, minutes)
     if paired_task_id is not None:
         _apply_paired_task_minutes(db, paired_task_id, user.id, minutes)
+
+
+def _apply_company_minutes(db: Session, user_id: uuid.UUID, building_family: str, minutes: int) -> None:
+    """The same minutes grow the city of every company the user belongs to."""
+    memberships = db.scalars(select(CompanyMembership).where(CompanyMembership.user_id == user_id)).all()
+    for membership in memberships:
+        membership.contribution_minutes_total += minutes
+        _increment_city_building(db, OwnerType.company, membership.company_id, building_family, minutes)
 
 
 def _apply_paired_task_minutes(db: Session, paired_task_id: uuid.UUID, user_id: uuid.UUID, minutes: int) -> None:
