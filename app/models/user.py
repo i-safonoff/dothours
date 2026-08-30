@@ -23,6 +23,7 @@ class User(Base):
     avatar_color: Mapped[str] = mapped_column(String(7), default="#9B6BFF", nullable=False)
     status: Mapped[str] = mapped_column(String(140), default="", nullable=False)
     daily_goal_minutes: Mapped[int] = mapped_column(Integer, default=120, nullable=False)
+    timezone: Mapped[str] = mapped_column(String(64), default="UTC", nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     categories: Mapped[list["Category"]] = relationship(back_populates="owner", cascade="all, delete-orphan")

@@ -15,6 +15,7 @@ class UserOut(BaseModel):
     avatar_color: str
     status: str
     daily_goal_minutes: int
+    timezone: str
 
 
 class UserPublic(BaseModel):
@@ -34,6 +35,7 @@ class UserUpdate(BaseModel):
     status: str | None = Field(default=None, max_length=140)
     avatar_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
     daily_goal_minutes: int | None = Field(default=None, ge=5, le=1440)
+    timezone: str | None = Field(default=None, max_length=64)
 
 
 class UserStats(BaseModel):
