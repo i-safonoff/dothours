@@ -1,4 +1,4 @@
-"""City scores for the world leaderboard (Этап 6).
+"""City scores for the world leaderboard (Stage 6).
 
 `weekly` / `monthly` are *slices over the same city*, not a reset: a company's
 buildings keep growing forever, while a period score is computed from the

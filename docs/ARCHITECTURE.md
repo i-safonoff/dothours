@@ -1,10 +1,12 @@
-# Архитектура
+# Architecture
 
-## Общая картина
+🇬🇧 **English** · [🇷🇺 Русский](ARCHITECTURE.ru.md)
+
+## The big picture
 
 ```mermaid
 flowchart LR
-    client["Фронтенд<br/>REST + WebSocket"]
+    client["Frontend<br/>REST + WebSocket"]
 
     subgraph runtime["Runtime"]
         api["FastAPI<br/>app/api"]
@@ -12,12 +14,12 @@ flowchart LR
         beat["Celery beat"]
     end
 
-    subgraph state["Состояние"]
+    subgraph state["State"]
         pg[("PostgreSQL")]
-        redis[("Redis<br/>брокер + pub/sub")]
+        redis[("Redis<br/>broker + pub/sub")]
     end
 
-    subgraph obs["Мониторинг"]
+    subgraph obs["Monitoring"]
         prom["Prometheus"]
         graf["Grafana"]
     end
@@ -25,92 +27,92 @@ flowchart LR
     client -->|"HTTP /api/v1"| api
     client -->|"WS /api/v1/ws"| api
     api --> pg
-    api -->|"события"| redis
-    beat -->|"расписание"| redis
+    api -->|"events"| redis
+    beat -->|"schedule"| redis
     redis --> worker
     worker --> pg
-    worker -->|"события"| redis
+    worker -->|"events"| redis
     redis -->|"pub/sub"| api
-    prom -->|"скрейп /metrics"| api
+    prom -->|"scrapes /metrics"| api
     graf --> prom
 ```
 
-## Слои
+## Layers
 
 ```
 app/
-  api/routes/     HTTP: валидация, права, коммит транзакции
-  services/       бизнес-логика поверх Session, без знания об HTTP
-  models/         ORM-модели
-  schemas/        Pydantic-контракты запросов и ответов
-  worker/         Celery: jobs.py — логика, tasks.py — обёртки с сессией
-  events/         шина реалтайм-событий
-  core/           настройки, БД, JWT, метрики, логи, таймзоны
+  api/routes/     HTTP: validation, permissions, commits the transaction
+  services/       business logic over a Session, no knowledge of HTTP
+  models/         ORM models
+  schemas/        Pydantic request/response contracts
+  worker/         Celery: jobs.py — logic, tasks.py — session wrappers
+  events/         the realtime event bus
+  core/           settings, DB, JWT, metrics, logs, timezones
 ```
 
-Правило простое: **роут владеет транзакцией, сервис — нет.** Сервисы делают
-`flush()`, но не `commit()`, поэтому одну и ту же логику вызывает и HTTP-ручка,
-и Celery-задача, и тест — каждый со своей транзакцией.
+The rule is simple: **the route owns the transaction, the service doesn't.**
+Services `flush()` but never `commit()`, so the same logic is callable from
+an HTTP handler, a Celery task, and a test — each with its own transaction.
 
-## Ключевые решения
+## Key decisions
 
-### Кэши вместо агрегации на лету
+### Caches instead of aggregating on the fly
 
-`CityBuilding`, `DailyProgress`, `Post.likes_count`, `CityScore` — это
-материализованное состояние, а не источник правды. Пересчитывать сумму всех
-`time_entries` на каждый запрос города не масштабируется, как только у
-пользователя появляется история за пару месяцев. Обновляются в момент, когда
-запись времени завершается.
+`CityBuilding`, `DailyProgress`, `Post.likes_count`, `CityScore` are
+materialized state, not the source of truth. Summing every `time_entries`
+row on every city request doesn't scale once a user has a couple of months
+of history. They update the moment a time entry finishes.
 
-Исключение — стрик: он считается на чтении, потому что при текущих объёмах это
-дешевле, чем ещё один кэш, который надо инвалидировать. Когда упрётся —
-переедет в фоновую задачу.
+The exception is streaks: computed on read, because at the current scale
+that's cheaper than another cache to invalidate. When it starts to cost
+something, it moves to a background job.
 
-### Лидерборд пересчитывается лениво
+### The leaderboard recomputes lazily
 
-`city_scores` обновляются на чтении, если протухли (`LEADERBOARD_TTL_SECONDS`).
-`recompute_scores()` — обычная функция, а не ручка: публичный эндпоинт
-пересчёта был бы готовой точкой для DoS. Celery beat может дёргать её по
-расписанию, когда захочется предсказуемости вместо ленивости.
+`city_scores` refreshes on read once it's gone stale
+(`LEADERBOARD_TTL_SECONDS`). `recompute_scores()` is a plain function, not
+an endpoint: a public recompute endpoint would be a ready-made DoS target.
+Celery beat can call it on a schedule whenever predictability beats
+laziness.
 
-### События — подсказки, а не данные
+### Events are hints, not data
 
-Реалтайм-событие говорит «перечитай», а не «вот новое состояние». Поэтому
-публиковать можно прямо из сервисов: событие, обогнавшее откатившуюся
-транзакцию, стоит клиенту одного лишнего GET, а не неверного экрана.
-Подробнее — [REALTIME.md](REALTIME.md).
+A realtime event says "re-read this," not "here's the new state." That's
+what makes it safe to publish straight from the services: an event that
+races a rolled-back transaction costs the client one extra GET, not a wrong
+screen. Details in [REALTIME.md](REALTIME.md).
 
-### Уведомления — это строки, а не отправки
+### Notifications are rows, not sends
 
-`Notification` в БД — источник правды; канал доставки (WebSocket, потом почта
-или пуш) лишь объявляет о строке, которая уже есть. Из-за этого фоновые задачи
-тестируются вообще без транспорта. Подробнее — [NOTIFICATIONS.md](NOTIFICATIONS.md).
+The `Notification` row in the database is the source of truth; a delivery
+channel (WebSocket, later email or push) only announces a row that already
+exists. That's why the background jobs are testable with no transport at
+all. Details in [NOTIFICATIONS.md](NOTIFICATIONS.md).
 
-### Продуктовый конфиг живёт в коде
+### Product config lives in code
 
-Уровни зданий (`app/building_families.py`) и районы города
-(`app/city_districts.py`) — не пользовательские данные, а настройка продукта.
-Районы синхронизируются в таблицу только затем, чтобы `district_id` был
-честным внешним ключом; синк идемпотентный, поэтому код и таблица не
-разъезжаются.
+Building levels (`app/building_families.py`) and city districts
+(`app/city_districts.py`) are product configuration, not user data.
+Districts sync into a table only so `district_id` is an honest foreign key;
+the sync is idempotent, so code and table can't drift apart.
 
-### Раскладка города детерминирована
+### City layout is deterministic
 
-Район здания следует из семейства, а тайл, поворот и вариант выводятся из его
-`id`. Никакого состояния алгоритма раскладки не хранится, город одинаково
-выглядит на всех клиентах, и при этом два города с одинаковым набором зданий
-не выглядят близнецами.
+A building's district follows from its family; its tile, rotation, and
+variant are derived from its own `id`. No layout-algorithm state is stored
+anywhere, a city renders identically on every client, and two cities
+holding the same buildings still don't look like twins.
 
-### Таймзона у пользователя, а не у сервера
+### Timezone lives on the user, not the server
 
-Напоминания шлются в 19:00 **по времени пользователя**. Beat запускается
-ежечасно и берёт тех, у кого сейчас нужный локальный час — так не нужно
-персональное расписание, а повторный запуск часа ничего не дублирует.
+Reminders go out at 19:00 **the user's own time**. Beat runs hourly and
+picks whoever's local hour matches right now — so no per-user schedule is
+needed, and a re-run of the same hour can't double-send.
 
-## Тесты
+## Tests
 
-Тесты гоняются на SQLite в памяти: никаких внешних сервисов, весь прогон —
-секунды. Это осознанный размен: специфику Postgres (enum-типы, конкурентные
-транзакции) SQLite не ловит, поэтому миграции отдельно проверяются на реальном
-Postgres в CI — по одной ревизии за раз, потому что часть ошибок видна только
-на уже существующей базе.
+Tests run on an in-memory SQLite: no external services, the whole run takes
+seconds. That's a deliberate trade-off — SQLite doesn't catch Postgres
+specifics (enum types, concurrent transactions), so migrations are checked
+separately against a real Postgres in CI, one revision at a time, because
+some bugs only show up on a database that already exists.

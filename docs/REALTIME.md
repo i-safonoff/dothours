@@ -1,75 +1,79 @@
-# Реалтайм (WebSocket)
+# Realtime (WebSocket)
 
-## Подключение
+🇬🇧 **English** · [🇷🇺 Русский](REALTIME.ru.md)
+
+## Connecting
 
 ```
 GET /api/v1/ws?token=<JWT>
 ```
 
-Токен передаётся в query, потому что браузерный `WebSocket` не умеет ставить
-заголовок `Authorization`. Это тот же JWT, что и в REST, — сокет никогда не
-даёт больше прав, чем сессия, которая его открыла. Невалидный или
-отсутствующий токен → закрытие с кодом **4401**.
+The token rides in the query string because a browser `WebSocket` can't set
+an `Authorization` header. It's the same JWT the REST API uses — a socket
+never has more privilege than the session that opened it. An invalid or
+missing token closes the connection with code **4401**.
 
-Клиент может слать `{"action": "ping"}` и получит `{"event": "pong"}`. Всё
-остальное, что он пришлёт, игнорируется — это не ошибка.
+The client can send `{"action": "ping"}` and gets `{"event": "pong"}` back.
+Anything else it sends is ignored — that's not an error.
 
-## Формат сообщений
+## Message format
 
 ```json
 { "event": "timer.stopped", "data": { "entry_id": "…", "minutes": 42 } }
 ```
 
-## События
+## Events
 
-| Событие | Кому | Когда |
+| Event | To whom | When |
 |---|---|---|
-| `timer.started` | владельцу | стартовал таймер |
-| `timer.stopped` | владельцу | таймер остановлен |
-| `city.building_leveled_up` | владельцу | здание поднялось на уровень |
-| `notification.created` | адресату | появилось уведомление |
-| `friend.request_received` | адресату заявки | пришла заявка в друзья |
-| `friend.request_accepted` | отправителю | заявку приняли |
-| `paired_task.progress` | участнику | зачтены минуты в парное задание |
-| `paired_task.completed` | всем участникам | задание закрыто |
+| `timer.started` | the owner | a timer started |
+| `timer.stopped` | the owner | a timer stopped |
+| `city.building_leveled_up` | the owner | a building leveled up |
+| `notification.created` | the recipient | a notification was created |
+| `friend.request_received` | the request's addressee | a friend request arrived |
+| `friend.request_accepted` | the sender | the request was accepted |
+| `paired_task.progress` | the participant | minutes were credited to a paired task |
+| `paired_task.completed` | every participant | a task closed |
 
-`city.building_leveled_up` приходит и на личный город (`owner_type: "user"`),
-и на город компании (`owner_type: "company"`) — во втором случае его получают
-все участники сразу, даже те, кто сам не трекал.
+`city.building_leveled_up` fires for both a personal city
+(`owner_type: "user"`) and a company city (`owner_type: "company"`) — in the
+latter case, every member gets it at once, even the ones who tracked
+nothing themselves.
 
-## Главный принцип: событие — это подсказка, а не данные
+## The core principle: an event is a hint, not data
 
-Событие говорит «у тебя что-то изменилось, перечитай», а не «вот новое
-состояние». Поэтому:
+An event says "something about you changed, re-read it," not "here's the
+new state." Because of that:
 
-- `data` минимальный — идентификаторы, не объекты. Источник правды — REST.
-- Публикация дешёвая и безопасная: если она обгонит откатившуюся транзакцию,
-  клиент сделает один лишний GET, а не покажет неправду.
-- Схему событий можно менять, не ломая клиентов, которые и так перечитывают.
+- `data` is minimal — ids, not objects. The source of truth is REST.
+- Publishing is cheap and safe: if it races a rolled-back transaction, the
+  client makes one extra GET, not shows something untrue.
+- The event schema can change without breaking clients — they re-read
+  anyway.
 
-## Каналы и бэкенды
+## Channels and backends
 
-Канал — это «кому слышно», а не «что случилось»: `user:{id}`, `company:{id}`.
-Сокет подписывается на свой канал и на каналы всех компаний пользователя;
-состав каналов фиксируется в момент подключения, так что после вступления в
-новую компанию нужно переподключиться.
+A channel is "who should hear this," not "what happened":
+`user:{id}`, `company:{id}`. A socket subscribes to its own channel and to
+the channel of every company the user belongs to; the channel set is fixed
+at connect time, so joining a new company means reconnecting.
 
 `WS_BACKEND`:
 
-- `redis` (в Docker) — pub/sub через Redis. Нужен, как только процессов больше
-  одного: сокет держит один воркер, а событие может родиться в другом или
-  вообще в Celery.
-- `memory` (по умолчанию) — фан-аут внутри процесса. Корректен ровно для
-  одного процесса: тесты и `uvicorn --reload`.
+- `redis` (in Docker) — pub/sub through Redis. Needed as soon as there's
+  more than one process: a socket lives on one worker, and an event can be
+  born on another one, or in Celery entirely.
+- `memory` (default) — an in-process fan-out. Correct only for a single
+  process: tests and `uvicorn --reload`.
 
-Если Redis недоступен, шина логирует предупреждение и продолжает работать
-локально: реалтайм — не повод ронять запросы.
+If Redis is unreachable, the bus logs a warning and keeps working locally —
+realtime is never a reason to fail a request.
 
-## Ограничения
+## Limits
 
-- Очередь подписчика — 100 событий; медленный клиент теряет лишние, а не
-  тормозит публикацию. Клиенту это не страшно ровно потому, что события —
-  подсказки.
-- Сокет не держит соединение к БД: после аутентификации сессия отпускается
-  обратно в пул.
-- Отдельного heartbeat со стороны сервера нет — пингует клиент.
+- A subscriber's queue holds 100 events; a slow client drops the extras
+  instead of stalling publishing. That's fine for the client precisely
+  because events are hints.
+- A socket doesn't hold onto a DB connection: the session goes back to the
+  pool right after authentication.
+- There's no server-side heartbeat — the client pings.

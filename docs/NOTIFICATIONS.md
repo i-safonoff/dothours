@@ -1,77 +1,82 @@
-# Уведомления и фоновые задачи
+# Notifications and background jobs
 
-## Модель
+🇬🇧 **English** · [🇷🇺 Русский](NOTIFICATIONS.ru.md)
 
-Уведомление — это строка в `notifications`, а не «отправка». Канал доставки
-(почта, пуш, WebSocket) — способ объявить о строке, которая уже есть. Поэтому
-API — источник правды, а джобы тестируются без транспорта вообще.
+## Model
+
+A notification is a row in `notifications`, not a "send." A delivery
+channel (email, push, WebSocket) is just a way to announce a row that
+already exists. That's why the API is the source of truth, and the jobs
+are testable with no transport at all.
 
 `Notification`: `user_id`, `kind`, `title`, `body`, `payload` (JSON), `read_at`.
 
-Виды (`NotificationKind`): `daily_reminder`, `streak_at_risk`,
+Kinds (`NotificationKind`): `daily_reminder`, `streak_at_risk`,
 `paired_task_expired`, `paired_task_completed`, `friend_request`.
 
-## Эндпоинты
+## Endpoints
 
 - `GET /notifications?unread_only=&limit=&offset=` → `{unread_count, items}`
 - `GET /notifications/unread-count`
 - `POST /notifications/{id}/read`
 - `POST /notifications/read-all`
 
-Чужое уведомление отдаёт 404, а не 403 — не подтверждаем его существование.
+Someone else's notification returns 404, not 403 — its existence isn't
+confirmed.
 
-## Задачи
+## Jobs
 
-| Задача | Расписание (UTC) | Что делает |
+| Job | Schedule (UTC) | What it does |
 |---|---|---|
-| `send_daily_reminders` | каждый час, :00 | Напоминание тем, кто не закрыл дневную цель |
-| `warn_streaks_at_risk` | каждый час, :05 | Предупреждение о теряемой серии |
-| `expire_overdue_paired_tasks` | каждый час, :15 | Просроченные парные задания → `expired` + уведомления |
-| `cleanup_read_notifications` | по понедельникам 03:30 | Удаляет прочитанное старше 30 дней |
+| `send_daily_reminders` | every hour, :00 | Reminds anyone who hasn't met today's goal |
+| `warn_streaks_at_risk` | every hour, :05 | Warns about a streak about to be lost |
+| `expire_overdue_paired_tasks` | every hour, :15 | Overdue paired tasks → `expired` + notifications |
+| `cleanup_read_notifications` | Mondays, 03:30 | Deletes read notifications older than 30 days |
 
-### Почему ежечасно, а не «в 19:00»
+### Why hourly instead of "at 19:00"
 
-У `User` появилось поле `timezone`. Джоба запускается каждый час и берёт
-ровно тех пользователей, у кого **сейчас** локальные 19:00 (или 21:00 для
-стрика). Так напоминание приходит вечером у пользователя, а не вечером по
-UTC — и при этом не нужно персональное расписание на каждого. Повторный
-запуск того же часа ничего не дублирует: перед отправкой проверяется, не было
-ли такого же уведомления за последние 12 часов.
+`User` gained a `timezone` field. The job runs every hour and picks exactly
+the users for whom it's **currently** 19:00 locally (or 21:00 for the
+streak warning). That way a reminder lands in the user's own evening, not
+UTC's — with no per-user schedule needed. A re-run of the same hour can't
+double-send: before sending, it checks whether the same notification
+already went out in the last 12 hours.
 
-Неизвестная таймзона в БД не роняет батч — `app/core/timezones.zone_for`
-молча откатывается на UTC.
+An unknown timezone in the database doesn't crash the batch —
+`app/core/timezones.zone_for` silently falls back to UTC.
 
-## Структура кода
+## Code layout
 
 ```
-app/worker/celery_app.py   Celery + beat schedule
-app/worker/tasks.py        задачи-обёртки: открыть сессию, вызвать джобу, закоммитить
-app/worker/jobs.py         сама логика — обычные функции над Session, без Celery
-app/services/notifications.py  создание/чтение уведомлений
+app/worker/celery_app.py   Celery + the beat schedule
+app/worker/tasks.py        task wrappers: open a session, call the job, commit
+app/worker/jobs.py         the actual logic — plain functions over a Session, no Celery
+app/services/notifications.py  create/read notifications
 ```
 
-Джобы ничего не коммитят сами — транзакцией владеет вызывающий. Благодаря
-этому тесты вызывают `jobs.send_daily_reminders(db, now)` напрямую с
-подставленным «сейчас», без eager-режима Celery и без брокера.
+Jobs never commit anything themselves — the caller owns the transaction.
+That's why tests call `jobs.send_daily_reminders(db, now)` directly with a
+stubbed "now," with no Celery eager mode and no broker.
 
-## Запуск
+## Running it
 
-Redis, `worker` и `beat` подняты в `docker-compose.yml`:
+Redis, `worker`, and `beat` are wired into `docker-compose.yml`:
 
 ```bash
 docker compose up --build
 ```
 
-Локально, без Docker:
+Locally, without Docker:
 
 ```bash
 poetry run celery -A app.worker.celery_app.celery_app worker --loglevel=info
 poetry run celery -A app.worker.celery_app.celery_app beat --loglevel=info
 ```
 
-## Чего пока нет
+## What's not here yet
 
-- Внешних каналов (email/push) — решено начать с in-app; `payload` уже
-  достаточно, чтобы канал собрал письмо, не заглядывая в БД.
-- Пуша уведомления в реальном времени — приедет с веткой WebSocket: она
-  подпишется на те же события.
+- External channels (email/push) — the decision was to start with in-app
+  only; `payload` already carries enough for a channel to assemble a
+  message without looking anything up in the database. In-app delivery
+  itself is already realtime: every notification also fires a
+  `notification.created` WebSocket event — see [REALTIME.md](REALTIME.md).

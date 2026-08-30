@@ -1,4 +1,4 @@
-"""Placing buildings on the isometric grid (Этап 7).
+"""Placing buildings on the isometric grid (Stage 7).
 
 Placement is deterministic from the building's id: the same city renders the
 same way on every client and after every restart, without storing a layout

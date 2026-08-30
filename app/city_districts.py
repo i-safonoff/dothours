@@ -1,4 +1,4 @@
-"""Static catalog of city districts (Этап 7).
+"""Static catalog of city districts (Stage 7).
 
 Like `building_families`, this is product config rather than user data — it
 lives in code and is synced into the `city_districts` table, which exists only

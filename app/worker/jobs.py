@@ -81,7 +81,7 @@ def warn_streaks_at_risk(db: Session, now: datetime | None = None) -> int:
 
         yesterday = _progress_for(db, user, user_now.date() - timedelta(days=1))
         if yesterday is None or not yesterday.goal_met:
-            continue  # стрика нет — терять нечего
+            continue  # no streak to protect
 
         if already_notified_since(db, user.id, NotificationKind.streak_at_risk, now - timedelta(hours=12)):
             continue

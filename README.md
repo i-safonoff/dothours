@@ -5,65 +5,67 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.141-009688.svg)](https://fastapi.tiangolo.com/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-**Трекер времени, который превращает потраченные часы в город.**
+🇬🇧 **English** · [🇷🇺 Русский](README.ru.md)
 
-Каждая категория, в которой вы трекаете время, растит своё здание: учёба —
-школы и библиотеки, спорт — залы и стадионы. Друзья подталкивают друг друга
-общими заданиями, компании строят общий город, а лучшие города попадают в
-мировой топ. Геймификация — не украшение поверх трекера, а сама причина
-открыть приложение завтра.
+**A time tracker that turns hours you've logged into a city.**
 
-Это бэкенд-часть проекта: REST API + WebSocket. Полный план по этапам —
-[`docs/API_SPEC.md`](docs/API_SPEC.md); реализованы все этапы.
+Every category you track time in grows its own building: study grows schools
+and libraries, sport grows gyms and stadiums. Friends push each other through
+shared challenges, companies build a city together, and the best cities make
+the world leaderboard. Gamification isn't decoration on top of the tracker —
+it's the reason to open the app again tomorrow.
 
----
-
-## Содержание
-
-- [Возможности](#возможности)
-- [Стек](#стек)
-- [Быстрый старт](#быстрый-старт)
-- [Локальная разработка](#локальная-разработка)
-- [Обзор API](#обзор-api)
-- [Мониторинг](#мониторинг)
-- [Структура проекта](#структура-проекта)
-- [Тесты и качество](#тесты-и-качество)
-- [Документация](#документация)
-- [Что дальше](#что-дальше)
+This is the backend: REST API + WebSocket. The full staged plan lives in
+[`docs/API_SPEC.md`](docs/API_SPEC.md) — every stage is implemented.
 
 ---
 
-## Возможности
+## Contents
 
-| Что | Как это работает |
+- [Features](#features)
+- [Stack](#stack)
+- [Quickstart](#quickstart)
+- [Local development](#local-development)
+- [API overview](#api-overview)
+- [Monitoring](#monitoring)
+- [Project layout](#project-layout)
+- [Tests and quality](#tests-and-quality)
+- [Documentation](#documentation)
+- [What's next](#whats-next)
+
+---
+
+## Features
+
+| What | How it works |
 |---|---|
-| **Аутентификация** | Регистрация, вход, JWT-bearer; цвет аватара назначается детерминированно от email |
-| **Категории** | CRUD, у каждой — семейство зданий, цвет, форма и дневная цель |
-| **Трекер** | Старт/стоп таймера, ручные записи, сводка за день по категориям |
-| **Личный город** | Здание растёт от суммарных часов в категории и повышает уровень по таблице порогов |
-| **Стрики** | Считаются по дням, в которые дневная цель закрыта |
-| **Друзья** | Заявки, принятие/отклонение, список друзей с их сегодняшними минутами |
-| **Парные задания** | Совместные челленджи; засчитываются по сумме или каждому участнику отдельно |
-| **Лента и профили** | Посты, лайки, комментарии, публичный профиль без утечки email |
-| **Компании** | Роли `owner`/`admin`/`member`, инвайт-коды, общий город из минут всех участников |
-| **Мировой топ** | Кэшированные счёта городов: `all_time`, `weekly`, `monthly` |
-| **Изораскладка** | Районы и детерминированные координаты, поворот и вариант каждого здания |
-| **Уведомления** | Входящие в приложении: напоминания и предупреждения о стрике по времени пользователя |
-| **Реалтайм** | WebSocket с событиями таймера, города, друзей, заданий и уведомлений |
-| **Мониторинг** | `/metrics` для Prometheus и готовый дашборд Grafana |
+| **Auth** | Register, log in, JWT bearer; avatar color is assigned deterministically from the email |
+| **Categories** | CRUD, each tied to a building family, a color, a shape, and a daily goal |
+| **Tracker** | Start/stop timer, manual entries, a daily summary by category |
+| **Personal city** | A building grows from tracked hours in its category and levels up against a threshold table |
+| **Streaks** | Computed from the days a daily goal was met |
+| **Friends** | Requests, accept/decline, a friends list with their minutes tracked today |
+| **Paired tasks** | Co-op challenges, credited either by combined total or per participant |
+| **Feed & profiles** | Posts, likes, comments, a public profile that never leaks an email |
+| **Companies** | `owner`/`admin`/`member` roles, invite codes, a shared city grown from every member's minutes |
+| **World leaderboard** | Cached city scores: `all_time`, `weekly`, `monthly` |
+| **Isometric layout** | Districts and a deterministic tile, rotation and variant per building |
+| **Notifications** | In-app inbox: reminders and streak warnings timed to the user's own timezone |
+| **Realtime** | WebSocket events for the timer, the city, friends, tasks, and notifications |
+| **Monitoring** | `/metrics` for Prometheus plus a ready-made Grafana dashboard |
 
-## Стек
+## Stack
 
-- **FastAPI** + **SQLAlchemy 2.0** (синхронная сессия) + **PostgreSQL**
-- **Alembic** — миграции
-- **JWT** (PyJWT + bcrypt) — аутентификация
-- **Celery** + **Redis** — фоновые задачи и реалтайм pub/sub
-- **Prometheus** + **Grafana** — метрики и дашборды
-- **pytest** — тесты на SQLite в памяти, внешние сервисы не нужны
-- **ruff** — линт и форматирование
-- **Docker Compose** — весь стек одной командой
+- **FastAPI** + **SQLAlchemy 2.0** (sync session) + **PostgreSQL**
+- **Alembic** — migrations
+- **JWT** (PyJWT + bcrypt) — authentication
+- **Celery** + **Redis** — background jobs and realtime pub/sub
+- **Prometheus** + **Grafana** — metrics and dashboards
+- **pytest** — tests on an in-memory SQLite, no external services needed
+- **ruff** — linting and formatting
+- **Docker Compose** — the whole stack in one command
 
-## Быстрый старт
+## Quickstart
 
 ```bash
 git clone https://github.com/i-safonoff/dothours.git
@@ -72,144 +74,145 @@ cp .env.example .env
 make up
 ```
 
-Поднимутся API, PostgreSQL, Redis, Celery worker и beat. Миграции накатятся
-автоматически при старте.
+This brings up the API, PostgreSQL, Redis, the Celery worker, and beat.
+Migrations run automatically on startup.
 
 - API — http://localhost:8000
-- Интерактивная документация — http://localhost:8000/docs
-- Проверка живости — http://localhost:8000/health
+- Interactive docs — http://localhost:8000/docs
+- Liveness check — http://localhost:8000/health
 
-Вместе с мониторингом:
+With monitoring:
 
 ```bash
 make stack-up
 ```
 
 - Prometheus — http://localhost:9090
-- Grafana — http://localhost:3000 (`admin` / `admin`, дашборд «.hours API» уже на месте)
+- Grafana — http://localhost:3000 (`admin` / `admin`, the ".hours API" dashboard is already there)
 
-## Локальная разработка
+## Local development
 
-Нужны Python 3.11+, [Poetry](https://python-poetry.org/) и запущенные
-PostgreSQL с Redis (проще всего `docker compose up -d db redis`).
+You'll need Python 3.11+, [Poetry](https://python-poetry.org/), and a running
+PostgreSQL and Redis (easiest: `docker compose up -d db redis`).
 
 ```bash
 make install
-cp .env.example .env        # DATABASE_URL укажите на localhost, а не на db
+cp .env.example .env        # point DATABASE_URL at localhost, not db
 make migrate
-make run                    # API с автоперезагрузкой
+make run                    # API with auto-reload
 ```
 
-Фоновые задачи — в отдельных терминалах:
+Background jobs, each in its own terminal:
 
 ```bash
 make worker
 make beat
 ```
 
-Все команды — `make help`. Перед первым коммитом стоит поставить хуки:
+All commands: `make help`. Worth installing the hooks before your first commit:
 
 ```bash
 poetry run pre-commit install
 ```
 
-### Переменные окружения
+### Environment variables
 
-| Переменная | По умолчанию | Зачем |
+| Variable | Default | What it's for |
 |---|---|---|
-| `DATABASE_URL` | `postgresql+psycopg2://…@db:5432/dothours` | Подключение к БД |
-| `JWT_SECRET_KEY` | — | Подпись токенов; **обязательно поменяйте** |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | `10080` | Время жизни токена |
-| `CORS_ORIGINS` | `["http://localhost:5173"]` | Разрешённые источники |
-| `CELERY_BROKER_URL` | `redis://redis:6379/0` | Брокер Celery |
-| `WS_BACKEND` | `memory` | `redis` — фан-аут между процессами, `memory` — внутри одного |
-| `LEADERBOARD_TTL_SECONDS` | `300` | Как долго отдаётся кэш лидерборда |
-| `METRICS_ENABLED` | `true` | Включает `/metrics` |
+| `DATABASE_URL` | `postgresql+psycopg2://…@db:5432/dothours` | Database connection |
+| `JWT_SECRET_KEY` | — | Token signing key; **make sure to change this** |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | `10080` | Token lifetime |
+| `CORS_ORIGINS` | `["http://localhost:5173"]` | Allowed origins |
+| `CELERY_BROKER_URL` | `redis://redis:6379/0` | Celery broker |
+| `WS_BACKEND` | `memory` | `redis` — fan-out across processes, `memory` — inside one |
+| `LEADERBOARD_TTL_SECONDS` | `300` | How long a cached leaderboard row is served |
+| `METRICS_ENABLED` | `true` | Turns `/metrics` on |
 
-## Обзор API
+## API overview
 
-Всё под `/api/v1`, всё кроме `/auth/*` требует заголовок `Authorization: Bearer <token>`.
+Everything lives under `/api/v1`; everything except `/auth/*` needs an
+`Authorization: Bearer <token>` header.
 
-| Группа | Эндпоинты |
+| Group | Endpoints |
 |---|---|
-| Аутентификация | `POST /auth/register`, `POST /auth/login`, `GET /auth/me` |
-| Профиль | `GET/PATCH /users/me`, `GET /users/me/stats`, `GET /users/search`, `GET /users/{id}` |
-| Категории | `GET/POST /categories`, `PATCH/DELETE /categories/{id}` |
-| Трекер | `POST /time-entries/start`, `POST /time-entries/{id}/stop`, `GET /time-entries`, `GET /time-entries/summary` |
-| Город | `GET /city/me`, `GET /city/districts`, `GET /building-families` |
-| Друзья | `GET /friends`, `POST /friends/requests`, `POST /friends/requests/{id}/accept` |
-| Парные задания | `POST /paired-tasks`, `GET /paired-tasks`, `GET /paired-tasks/{id}` |
-| Лента | `POST/GET /posts`, `POST/DELETE /posts/{id}/like`, `GET/POST /posts/{id}/comments` |
-| Компании | `POST/GET /companies`, `POST /companies/join`, `GET /companies/{id}/members`, `GET /companies/{id}/city` |
-| Топ | `GET /leaderboard/companies`, `GET /leaderboard/companies/{id}` |
-| Уведомления | `GET /notifications`, `POST /notifications/{id}/read`, `POST /notifications/read-all` |
-| Реалтайм | `GET /ws?token=<JWT>` |
+| Auth | `POST /auth/register`, `POST /auth/login`, `GET /auth/me` |
+| Profile | `GET/PATCH /users/me`, `GET /users/me/stats`, `GET /users/search`, `GET /users/{id}` |
+| Categories | `GET/POST /categories`, `PATCH/DELETE /categories/{id}` |
+| Tracker | `POST /time-entries/start`, `POST /time-entries/{id}/stop`, `GET /time-entries`, `GET /time-entries/summary` |
+| City | `GET /city/me`, `GET /city/districts`, `GET /building-families` |
+| Friends | `GET /friends`, `POST /friends/requests`, `POST /friends/requests/{id}/accept` |
+| Paired tasks | `POST /paired-tasks`, `GET /paired-tasks`, `GET /paired-tasks/{id}` |
+| Feed | `POST/GET /posts`, `POST/DELETE /posts/{id}/like`, `GET/POST /posts/{id}/comments` |
+| Companies | `POST/GET /companies`, `POST /companies/join`, `GET /companies/{id}/members`, `GET /companies/{id}/city` |
+| Leaderboard | `GET /leaderboard/companies`, `GET /leaderboard/companies/{id}` |
+| Notifications | `GET /notifications`, `POST /notifications/{id}/read`, `POST /notifications/read-all` |
+| Realtime | `GET /ws?token=<JWT>` |
 
-Полное описание с телами запросов — в OpenAPI на `/docs`.
+Full request/response bodies live in the OpenAPI docs at `/docs`.
 
-## Мониторинг
+## Monitoring
 
-`GET /metrics` отдаёт метрики Prometheus: RED-метрики по HTTP плюс доменные —
-натреканные минуты по семействам зданий, старты и остановки таймеров,
-апгрейды зданий, открытые сокеты, запуски и длительность Celery-задач.
-Каждый ответ несёт `X-Request-ID`, а на каждый запрос пишется JSON-строка лога.
+`GET /metrics` exposes Prometheus metrics: RED metrics over HTTP plus domain
+counters — tracked minutes by building family, timer starts and stops,
+building level-ups, open sockets, and Celery task runs and durations. Every
+response carries `X-Request-ID`, and every request writes one JSON log line.
 
-Подробности и таблица метрик — [`docs/OBSERVABILITY.md`](docs/OBSERVABILITY.md).
+Details and the full metric table — [`docs/OBSERVABILITY.md`](docs/OBSERVABILITY.md).
 
-## Структура проекта
+## Project layout
 
 ```
 app/
-  api/routes/           HTTP-ручки, по модулю на ресурс
-  services/             бизнес-логика поверх сессии БД
-  models/               ORM-модели
-  schemas/              Pydantic-контракты
-  worker/               Celery: jobs.py — логика, tasks.py — обёртки
-  events/               шина реалтайм-событий
-  core/                 настройки, БД, JWT, метрики, логи, таймзоны
-  building_families.py  каталог уровней зданий (конфиг, не таблица)
-  city_districts.py     каталог районов, синкается в city_districts
-alembic/                миграции
-ops/                    конфиг Prometheus и провижининг Grafana
-tests/                  pytest, по файлу на ресурс
-docs/                   спецификация и архитектурные заметки
+  api/routes/           HTTP handlers, one module per resource
+  services/             business logic over a DB session
+  models/                ORM models
+  schemas/               Pydantic contracts
+  worker/                Celery: jobs.py — logic, tasks.py — wrappers
+  events/                the realtime event bus
+  core/                  settings, DB, JWT, metrics, logs, timezones
+  building_families.py   building-level catalog (config, not a table)
+  city_districts.py      district catalog, synced into city_districts
+alembic/                 migrations
+ops/                     Prometheus config and Grafana provisioning
+tests/                   pytest, one file per resource
+docs/                    spec and architecture notes
 ```
 
-## Тесты и качество
+## Tests and quality
 
 ```bash
-make test     # pytest на SQLite в памяти
+make test     # pytest on an in-memory SQLite
 make lint     # ruff check + format --check
-make cov      # покрытие с HTML-отчётом
+make cov      # coverage with an HTML report
 ```
 
-Тестов — 95, покрытие ~94%. Внешние сервисы для прогона не нужны: тесты
-работают на SQLite в памяти, фоновые задачи вызываются напрямую с подставленным
-«сейчас», а реалтайм — через внутрипроцессную шину.
+95 tests, ~94% coverage. No external services needed to run them: tests run
+on an in-memory SQLite, background jobs are called directly with a stubbed
+"now", and realtime goes through the in-process bus.
 
-CI на каждый PR прогоняет линт, тесты, сборку Docker-образа и отдельную
-проверку миграций на настоящем PostgreSQL: по одной ревизии за раз, плюс
-`alembic check` и полный цикл downgrade/upgrade. Это ловит ошибки, которые не
-видны на чистой базе, — например, повторное создание уже существующего типа.
+CI runs lint, tests, a Docker build, and a separate migrations check against
+a real PostgreSQL on every PR: one revision at a time, plus `alembic check`
+and a full downgrade/upgrade cycle. That catches bugs invisible on a clean
+database — like a revision re-creating a type that already exists.
 
-## Документация
+## Documentation
 
-| Документ | О чём |
+| Doc | About |
 |---|---|
-| [`docs/API_SPEC.md`](docs/API_SPEC.md) | Спецификация по этапам и принятые решения |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Схема системы, слои, ключевые размены |
-| [`docs/REALTIME.md`](docs/REALTIME.md) | WebSocket: протокол, события, каналы |
-| [`docs/NOTIFICATIONS.md`](docs/NOTIFICATIONS.md) | Уведомления и расписание фоновых задач |
-| [`docs/OBSERVABILITY.md`](docs/OBSERVABILITY.md) | Метрики, логи, Prometheus и Grafana |
-| [`CONTRIBUTING.md`](CONTRIBUTING.md) | Как вести разработку в этом репозитории |
+| [`docs/API_SPEC.md`](docs/API_SPEC.md) | The staged spec and the decisions made along the way |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | System diagram, layers, key trade-offs |
+| [`docs/REALTIME.md`](docs/REALTIME.md) | WebSocket: protocol, events, channels |
+| [`docs/NOTIFICATIONS.md`](docs/NOTIFICATIONS.md) | Notifications and the background job schedule |
+| [`docs/OBSERVABILITY.md`](docs/OBSERVABILITY.md) | Metrics, logs, Prometheus and Grafana |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | How to work in this repository |
 
-## Что дальше
+## What's next
 
-- Внешние каналы уведомлений: почта и пуши поверх уже существующих строк
-- Кэш стриков, когда чтение упрётся в производительность
-- Экспортер Redis и алерты в Prometheus — когда появятся внятные SLO
-- Трейсинг (OpenTelemetry), если сервис вырастет из метрик и логов
+- External notification channels: email and push on top of the rows that already exist
+- A streak cache, once reading it starts to cost something
+- A Redis exporter and Prometheus alerts, once there are real SLOs to alert on
+- Tracing (OpenTelemetry), if the service outgrows metrics and logs
 
-## Лицензия
+## License
 
 [MIT](LICENSE)
