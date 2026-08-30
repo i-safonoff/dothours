@@ -27,9 +27,7 @@ READ_NOTIFICATION_TTL_DAYS = 30
 
 
 def _progress_for(db: Session, user: User, on_date) -> DailyProgress | None:
-    return db.scalar(
-        select(DailyProgress).where(DailyProgress.user_id == user.id, DailyProgress.date == on_date)
-    )
+    return db.scalar(select(DailyProgress).where(DailyProgress.user_id == user.id, DailyProgress.date == on_date))
 
 
 def send_daily_reminders(db: Session, now: datetime | None = None) -> int:

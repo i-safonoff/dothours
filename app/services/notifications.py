@@ -46,9 +46,7 @@ def create_notification(
     return notification
 
 
-def already_notified_since(
-    db: Session, user_id: uuid.UUID, kind: NotificationKind, since: datetime
-) -> bool:
+def already_notified_since(db: Session, user_id: uuid.UUID, kind: NotificationKind, since: datetime) -> bool:
     """Guard against a re-run of an hourly job sending the same nudge twice."""
     existing = db.scalar(
         select(Notification).where(

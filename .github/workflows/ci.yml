@@ -95,13 +95,10 @@ jobs:
       - name: Upgrade one revision at a time
         run: |
           set -eu
-          while :; do
-            before=$(poetry run alembic current 2>/dev/null | tail -1)
-            poetry run alembic upgrade +1
-            after=$(poetry run alembic current 2>/dev/null | tail -1)
-            [ "$before" = "$after" ] && break
-          done
-          poetry run alembic current
+          # The loop ends when there is no next revision (`upgrade +1` fails);
+          # the assertion afterwards is what distinguishes "done" from "broke".
+          while poetry run alembic upgrade +1; do :; done
+          poetry run alembic current | grep -q '(head)'
 
       - name: Models match the schema
         run: poetry run alembic check
