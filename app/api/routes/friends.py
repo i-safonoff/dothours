@@ -7,6 +7,8 @@ from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db
+from app.events import types
+from app.events.bus import bus, user_channel
 from app.models.city import DailyProgress
 from app.models.enums import FriendshipStatus
 from app.models.friendship import Friendship
@@ -89,6 +91,12 @@ def send_friend_request(
     db.add(friend_request)
     db.commit()
     db.refresh(friend_request)
+
+    bus.publish(
+        user_channel(payload.to_user_id),
+        types.FRIEND_REQUEST_RECEIVED,
+        {"request_id": str(friend_request.id), "from_user_id": str(current_user.id)},
+    )
     return FriendRequestOut.model_validate(friend_request, from_attributes=True)
 
 
@@ -116,6 +124,12 @@ def accept_friend_request(
     friend_request.responded_at = datetime.now(UTC)
     db.commit()
     db.refresh(friend_request)
+
+    bus.publish(
+        user_channel(friend_request.requester_id),
+        types.FRIEND_REQUEST_ACCEPTED,
+        {"request_id": str(friend_request.id), "by_user_id": str(current_user.id)},
+    )
     return FriendRequestOut.model_validate(friend_request, from_attributes=True)
 
 

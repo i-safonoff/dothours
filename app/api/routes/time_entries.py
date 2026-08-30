@@ -6,6 +6,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db
+from app.events import types
+from app.events.bus import bus, user_channel
 from app.models.category import Category
 from app.models.enums import TimeEntrySource
 from app.models.time_entry import TimeEntry
@@ -58,6 +60,8 @@ def start_entry(
     db.add(entry)
     db.commit()
     db.refresh(entry)
+
+    bus.publish(user_channel(current_user.id), types.TIMER_STARTED, {"entry_id": str(entry.id)})
     return TimeEntryOut.model_validate(entry)
 
 
@@ -88,6 +92,12 @@ def stop_entry(
 
     db.commit()
     db.refresh(entry)
+
+    bus.publish(
+        user_channel(current_user.id),
+        types.TIMER_STOPPED,
+        {"entry_id": str(entry.id), "minutes": minutes},
+    )
     return TimeEntryOut.model_validate(entry)
 
 

@@ -1,0 +1,10 @@
+"""Event names. One place, because the frontend switches on these strings."""
+
+TIMER_STARTED = "timer.started"
+TIMER_STOPPED = "timer.stopped"
+BUILDING_LEVELED_UP = "city.building_leveled_up"
+NOTIFICATION_CREATED = "notification.created"
+FRIEND_REQUEST_RECEIVED = "friend.request_received"
+FRIEND_REQUEST_ACCEPTED = "friend.request_accepted"
+PAIRED_TASK_PROGRESS = "paired_task.progress"
+PAIRED_TASK_COMPLETED = "paired_task.completed"
