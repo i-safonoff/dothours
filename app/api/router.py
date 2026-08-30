@@ -6,6 +6,7 @@ from app.api.routes import (
     city,
     companies,
     friends,
+    leaderboard,
     paired_tasks,
     posts,
     time_entries,
@@ -22,3 +23,4 @@ api_router.include_router(friends.router)
 api_router.include_router(paired_tasks.router)
 api_router.include_router(posts.router)
 api_router.include_router(companies.router)
+api_router.include_router(leaderboard.router)

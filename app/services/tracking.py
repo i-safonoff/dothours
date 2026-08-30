@@ -1,5 +1,5 @@
 import uuid
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -63,6 +63,7 @@ def _apply_paired_task_minutes(db: Session, paired_task_id: uuid.UUID, user_id: 
 
     if reached:
         task.status = PairedTaskStatus.completed
+        task.completed_at = datetime.now(UTC)
         db.flush()
 
 

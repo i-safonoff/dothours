@@ -2,6 +2,7 @@ from app.models.category import Category
 from app.models.city import CityBuilding, DailyProgress
 from app.models.company import Company, CompanyInvite, CompanyMembership
 from app.models.friendship import Friendship
+from app.models.leaderboard import CityScore
 from app.models.paired_task import PairedTask, PairedTaskParticipant
 from app.models.post import Comment, Post, PostLike
 from app.models.time_entry import TimeEntry
@@ -16,6 +17,7 @@ __all__ = [
     "Company",
     "CompanyMembership",
     "CompanyInvite",
+    "CityScore",
     "Friendship",
     "PairedTask",
     "PairedTaskParticipant",

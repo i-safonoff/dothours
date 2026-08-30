@@ -27,6 +27,7 @@ class PairedTask(Base):
         Enum(PairedTaskStatus, name="paired_task_status"), default=PairedTaskStatus.active, nullable=False
     )
     due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 

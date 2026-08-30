@@ -13,6 +13,9 @@ class Settings(BaseSettings):
 
     cors_origins: list[str] = ["http://localhost:5173"]
 
+    # How long a cached leaderboard row is served before it is recomputed on read.
+    leaderboard_ttl_seconds: int = 300
+
 
 @lru_cache
 def get_settings() -> Settings:
