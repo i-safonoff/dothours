@@ -5,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.building_families import level_for_hours
+from app.core.metrics import buildings_level_up_total
 from app.events import types
 from app.events.bus import bus, company_channel, user_channel
 from app.models.city import CityBuilding, DailyProgress
@@ -130,6 +131,7 @@ def _increment_city_building(
     db.flush()
 
     if building.level > previous_level:
+        buildings_level_up_total.labels(building_family, owner_type.value, str(building.level)).inc()
         channel = user_channel(owner_id) if owner_type == OwnerType.user else company_channel(owner_id)
         bus.publish(
             channel,

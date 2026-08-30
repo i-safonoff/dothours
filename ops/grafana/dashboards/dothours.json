@@ -1,0 +1,132 @@
+{
+  "uid": "dothours-api",
+  "title": ".hours API",
+  "tags": ["dothours"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Requests per second by handler",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (handler) (rate(http_requests_total{job=\"dothours-api\"}[5m]))",
+          "legendFormat": "{{handler}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Latency p95 by handler",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by (handler, le) (rate(http_request_duration_seconds_bucket{job=\"dothours-api\"}[5m])))",
+          "legendFormat": "{{handler}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Error rate (4xx / 5xx)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(http_requests_total{job=\"dothours-api\",status=~\"4..\"}[5m]))",
+          "legendFormat": "4xx"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(rate(http_requests_total{job=\"dothours-api\",status=~\"5..\"}[5m]))",
+          "legendFormat": "5xx"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Timers running now",
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 8 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "sum(dothours_active_timers)", "legendFormat": "active" }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Registrations (24h)",
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 8 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "sum(increase(dothours_registrations_total[24h]))", "legendFormat": "signups" }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Minutes tracked per hour by building family",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (building_family) (increase(dothours_minutes_tracked_total[1h]))",
+          "legendFormat": "{{building_family}}"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Building level-ups per hour",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (building_family, level) (increase(dothours_buildings_level_up_total[1h]))",
+          "legendFormat": "{{building_family}} → {{level}}"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Timer starts vs stops",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "sum(rate(dothours_timers_started_total[5m])) * 60", "legendFormat": "started/min" },
+        { "refId": "B", "expr": "sum(rate(dothours_timers_stopped_total[5m])) * 60", "legendFormat": "stopped/min" }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Postgres connections",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (datname) (pg_stat_database_numbackends{datname=\"dothours\"})",
+          "legendFormat": "{{datname}}"
+        }
+      ]
+    }
+  ]
+}

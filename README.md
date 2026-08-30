@@ -41,6 +41,15 @@ poetry run alembic upgrade head
 poetry run uvicorn app.main:app --reload
 ```
 
+### Monitoring
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.observability.yml up --build
+```
+
+Prometheus on `:9090`, Grafana on `:3000` with the ".hours API" dashboard
+already provisioned. See [`docs/OBSERVABILITY.md`](docs/OBSERVABILITY.md).
+
 ### Tests & linting
 
 ```bash
@@ -62,6 +71,7 @@ app/
   city_districts.py     static district catalog, synced into city_districts
   worker/          Celery app, beat schedule, and the jobs behind the tasks
   events/          realtime event bus (Redis pub/sub or in-process)
+ops/               Prometheus config and provisioned Grafana dashboards
 alembic/           migrations
 tests/             pytest suite, one file per resource
 docs/API_SPEC.md   full staged API spec — all stages are implemented
