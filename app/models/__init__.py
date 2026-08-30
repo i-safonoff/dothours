@@ -1,5 +1,5 @@
 from app.models.category import Category
-from app.models.city import CityBuilding, DailyProgress
+from app.models.city import CityBuilding, CityDistrict, DailyProgress
 from app.models.company import Company, CompanyInvite, CompanyMembership
 from app.models.friendship import Friendship
 from app.models.leaderboard import CityScore
@@ -13,6 +13,7 @@ __all__ = [
     "Category",
     "TimeEntry",
     "CityBuilding",
+    "CityDistrict",
     "DailyProgress",
     "Company",
     "CompanyMembership",

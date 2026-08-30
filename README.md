@@ -58,12 +58,13 @@ app/
   api/routes/      one module per resource (auth, users, categories, ...)
   services/        business logic (streaks, city-building leveling)
   building_families.py  static building-level catalog (not a DB table)
+  city_districts.py     static district catalog, synced into city_districts
 alembic/           migrations
 tests/             pytest suite, one file per resource
-docs/API_SPEC.md   full staged API spec — this repo implements Stages 1–6 and 8
+docs/API_SPEC.md   full staged API spec — all stages are implemented
 ```
 
-## What's implemented (Stages 1–6, 8)
+## What's implemented (all stages)
 
 - **Auth** — register / login / JWT
 - **Categories** — CRUD, each tied to a `building_family`
@@ -80,6 +81,7 @@ docs/API_SPEC.md   full staged API spec — this repo implements Stages 1–6 an
   and a shared city that grows from every member's tracked minutes
 - **World leaderboard** — cached `all_time`/`weekly`/`monthly` city scores for
   public companies, refreshed lazily on read
+- **Isometric layout** — districts and a deterministic tile, rotation and
+  variant per building, so a city renders the same everywhere
 
-The isometric city layout (Stage 7) is documented but not yet implemented —
-see the spec for why it's sequenced later.
+Every stage of the spec is now implemented.

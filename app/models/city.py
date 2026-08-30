@@ -1,7 +1,7 @@
 import uuid
 from datetime import date, datetime
 
-from sqlalchemy import Boolean, Date, DateTime, Enum, Integer, UniqueConstraint, func
+from sqlalchemy import Boolean, Date, DateTime, Enum, ForeignKey, Integer, String, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -27,9 +27,33 @@ class CityBuilding(Base):
     )
     level: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     total_minutes: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    district_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("city_districts.id"), nullable=True
+    )
+    position_x: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    position_y: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    rotation: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    variant: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
+
+
+class CityDistrict(Base):
+    """Catalog table — the rows are synced from app/city_districts.py, never edited by users."""
+
+    __tablename__ = "city_districts"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    key: Mapped[str] = mapped_column(String(32), unique=True, index=True, nullable=False)
+    building_family: Mapped[BuildingFamilyKey | None] = mapped_column(
+        Enum(BuildingFamilyKey, name="building_family_key"), nullable=True
+    )
+    title: Mapped[str] = mapped_column(String(80), nullable=False)
+    grid_x: Mapped[int] = mapped_column(Integer, nullable=False)
+    grid_y: Mapped[int] = mapped_column(Integer, nullable=False)
+    grid_w: Mapped[int] = mapped_column(Integer, nullable=False)
+    grid_h: Mapped[int] = mapped_column(Integer, nullable=False)
 
 
 class DailyProgress(Base):

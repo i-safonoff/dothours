@@ -10,6 +10,7 @@ from app.models.company import CompanyMembership
 from app.models.enums import OwnerType, PairedTaskStatus, PairedTaskTargetType
 from app.models.paired_task import PairedTask, PairedTaskParticipant
 from app.models.user import User
+from app.services.city_layout import assign_placement
 
 
 def apply_completed_entry(
@@ -106,6 +107,8 @@ def _increment_city_building(
             level=1,
         )
         db.add(building)
+        db.flush()
+        assign_placement(db, building)
 
     building.total_minutes += minutes
     building.level = level_for_hours(building_family, building.total_minutes / 60)

@@ -21,6 +21,7 @@ from app.schemas.company import (
     CompanyOut,
     CompanyUpdate,
 )
+from app.services.city_layout import place_missing
 from app.services.companies import (
     generate_invite_code,
     get_membership,
@@ -283,7 +284,12 @@ def get_company_city(
 ) -> CityOut:
     get_visible_company(db, company_id, current_user.id)
 
-    buildings = db.scalars(
-        select(CityBuilding).where(CityBuilding.owner_type == OwnerType.company, CityBuilding.owner_id == company_id)
-    ).all()
+    buildings = list(
+        db.scalars(
+            select(CityBuilding).where(
+                CityBuilding.owner_type == OwnerType.company, CityBuilding.owner_id == company_id
+            )
+        ).all()
+    )
+    place_missing(db, buildings)
     return CityOut(buildings=[CityBuildingOut.model_validate(b) for b in buildings])
