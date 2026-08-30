@@ -126,7 +126,7 @@ def test_building_level_up_is_announced(client: TestClient) -> None:
 
         event = receive_event(websocket)
         assert event["event"] == "city.building_leveled_up"
-        assert event["data"] == {"building_family": "study", "level": 2}
+        assert event["data"] == {"building_family": "study", "level": 2, "owner_type": "user"}
 
 
 def test_events_do_not_leak_to_another_user(client: TestClient) -> None:
@@ -144,3 +144,23 @@ def test_events_do_not_leak_to_another_user(client: TestClient) -> None:
         bob_socket.send_text(json.dumps({"action": "ping"}))
         # Первое, что приходит Бобу, — его собственный pong: чужой таймер до него не долетел.
         assert receive_event(bob_socket)["event"] == "pong"
+
+
+def test_company_city_events_reach_every_member(client: TestClient) -> None:
+    from tests.test_companies import create_company, invite_and_join, log_minutes
+
+    ann = register_and_login(client, email="ann@example.com", name="Ann")
+    bob = register_and_login(client, email="bob@example.com", name="Bob")
+    company = create_company(client, ann["token"])
+    invite_and_join(client, ann["token"], company["id"], bob["token"])
+
+    bob_category = create_category(client, bob["token"], building_family="work", shape="triangle")
+
+    # Ann не трекала ни минуты — событие долетает до неё через канал компании.
+    with client.websocket_connect(f"/api/v1/ws?token={ann['token']}") as ann_socket:
+        log_minutes(client, bob["token"], bob_category["id"], 60 * 12)
+
+        event = receive_event(ann_socket)
+        assert event["event"] == "city.building_leveled_up"
+        assert event["data"]["owner_type"] == "company"
+        assert event["data"]["building_family"] == "work"
