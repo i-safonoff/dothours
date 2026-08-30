@@ -4,7 +4,7 @@ HTTP-level RED metrics come from prometheus-fastapi-instrumentator in
 app/main.py; everything here is about tracked time, not requests.
 """
 
-from prometheus_client import Counter, Gauge
+from prometheus_client import Counter, Gauge, Histogram
 
 registrations_total = Counter(
     "dothours_registrations_total",
@@ -36,6 +36,36 @@ buildings_level_up_total = Counter(
 active_timers = Gauge(
     "dothours_active_timers",
     "Timers currently running (entries with no ended_at)",
+)
+
+
+notifications_created_total = Counter(
+    "dothours_notifications_created_total",
+    "In-app notifications written, by kind",
+    labelnames=("kind",),
+)
+
+events_published_total = Counter(
+    "dothours_events_published_total",
+    "Realtime events handed to the bus, by event name",
+    labelnames=("event",),
+)
+
+ws_connections = Gauge(
+    "dothours_ws_connections",
+    "WebSocket clients connected to this process",
+)
+
+background_task_runs_total = Counter(
+    "dothours_background_task_runs_total",
+    "Celery task executions, by task and outcome",
+    labelnames=("task", "outcome"),
+)
+
+background_task_duration_seconds = Histogram(
+    "dothours_background_task_duration_seconds",
+    "How long a Celery task takes",
+    labelnames=("task",),
 )
 
 

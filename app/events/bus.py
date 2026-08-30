@@ -25,6 +25,7 @@ from contextlib import asynccontextmanager
 from typing import Any
 
 from app.core.config import get_settings
+from app.core.metrics import events_published_total
 
 logger = logging.getLogger("dothours.events")
 
@@ -63,6 +64,7 @@ class EventBus:
     def publish(self, channel: str, event: str, data: dict[str, Any] | None = None) -> None:
         """Fire-and-forget. Never raises: a broken bus must not fail a request."""
         message = json.dumps({"event": event, "data": data or {}}, default=str)
+        events_published_total.labels(event).inc()
 
         if self.backend == "redis" and not self._redis_broken:
             self._publish_via_redis(channel, message)
