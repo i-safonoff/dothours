@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.building_families import level_for_hours
 from app.events import types
-from app.events.bus import bus, user_channel
+from app.events.bus import bus, company_channel, user_channel
 from app.models.city import CityBuilding, DailyProgress
 from app.models.company import CompanyMembership
 from app.models.enums import OwnerType, PairedTaskStatus, PairedTaskTargetType
@@ -129,11 +129,12 @@ def _increment_city_building(
     building.level = level_for_hours(building_family, building.total_minutes / 60)
     db.flush()
 
-    if building.level > previous_level and owner_type == OwnerType.user:
+    if building.level > previous_level:
+        channel = user_channel(owner_id) if owner_type == OwnerType.user else company_channel(owner_id)
         bus.publish(
-            user_channel(owner_id),
+            channel,
             types.BUILDING_LEVELED_UP,
-            {"building_family": building_family, "level": building.level},
+            {"building_family": building_family, "level": building.level, "owner_type": owner_type.value},
         )
     return building
 

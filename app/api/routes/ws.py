@@ -15,8 +15,9 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
 from app.core.security import decode_access_token
-from app.events.bus import bus, user_channel
+from app.events.bus import bus, company_channel, user_channel
 from app.models.user import User
+from app.services.companies import user_company_ids
 
 logger = logging.getLogger("dothours.ws")
 
@@ -38,6 +39,11 @@ def _authenticate(db: Session, token: str | None) -> User | None:
     return db.get(User, user_id)
 
 
+def _channels_for(db: Session, user: User) -> list[str]:
+    """Own channel plus one per company — a shared city changes for everyone at once."""
+    return [user_channel(user.id)] + [company_channel(cid) for cid in user_company_ids(db, user.id)]
+
+
 @router.websocket("/ws")
 async def realtime(
     websocket: WebSocket,
@@ -49,9 +55,9 @@ async def realtime(
         await websocket.close(code=INVALID_TOKEN_CODE)
         return
 
-    channels = [user_channel(user.id)]
+    channels = await asyncio.to_thread(_channels_for, db, user)
     # A socket can live for hours; hand the pooled connection back now that the
-    # only query it needed is done. The session stays usable, it just reconnects.
+    # queries it needed are done. The session stays usable, it just reconnects.
     await asyncio.to_thread(db.rollback)
 
     await websocket.accept()
