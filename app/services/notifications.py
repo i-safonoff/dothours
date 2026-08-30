@@ -12,6 +12,8 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.events import types
+from app.events.bus import bus, user_channel
 from app.models.enums import NotificationKind
 from app.models.notification import Notification
 
@@ -33,6 +35,12 @@ def create_notification(
     )
     db.add(notification)
     db.flush()
+
+    bus.publish(
+        user_channel(user_id),
+        types.NOTIFICATION_CREATED,
+        {"notification_id": str(notification.id), "kind": kind.value},
+    )
     return notification
 
 

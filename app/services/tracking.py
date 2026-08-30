@@ -5,6 +5,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.building_families import level_for_hours
+from app.events import types
+from app.events.bus import bus, user_channel
 from app.models.city import CityBuilding, DailyProgress
 from app.models.company import CompanyMembership
 from app.models.enums import OwnerType, PairedTaskStatus, PairedTaskTargetType
@@ -53,6 +55,12 @@ def _apply_paired_task_minutes(db: Session, paired_task_id: uuid.UUID, user_id: 
     participant.minutes_logged += minutes
     db.flush()
 
+    bus.publish(
+        user_channel(user_id),
+        types.PAIRED_TASK_PROGRESS,
+        {"paired_task_id": str(paired_task_id), "minutes_logged": participant.minutes_logged},
+    )
+
     all_participants = db.scalars(
         select(PairedTaskParticipant).where(PairedTaskParticipant.paired_task_id == paired_task_id)
     ).all()
@@ -66,6 +74,12 @@ def _apply_paired_task_minutes(db: Session, paired_task_id: uuid.UUID, user_id: 
         task.status = PairedTaskStatus.completed
         task.completed_at = datetime.now(UTC)
         db.flush()
+        for participant_row in all_participants:
+            bus.publish(
+                user_channel(participant_row.user_id),
+                types.PAIRED_TASK_COMPLETED,
+                {"paired_task_id": str(paired_task_id)},
+            )
 
 
 def _upsert_daily_progress(db: Session, user: User, entry_date: date, minutes: int) -> DailyProgress:
@@ -110,9 +124,17 @@ def _increment_city_building(
         db.flush()
         assign_placement(db, building)
 
+    previous_level = building.level
     building.total_minutes += minutes
     building.level = level_for_hours(building_family, building.total_minutes / 60)
     db.flush()
+
+    if building.level > previous_level and owner_type == OwnerType.user:
+        bus.publish(
+            user_channel(owner_id),
+            types.BUILDING_LEVELED_UP,
+            {"building_family": building_family, "level": building.level},
+        )
     return building
 
 

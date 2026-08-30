@@ -12,6 +12,7 @@ from app.api.routes import (
     posts,
     time_entries,
     users,
+    ws,
 )
 
 api_router = APIRouter(prefix="/api/v1")
@@ -26,3 +27,4 @@ api_router.include_router(posts.router)
 api_router.include_router(notifications.router)
 api_router.include_router(companies.router)
 api_router.include_router(leaderboard.router)
+api_router.include_router(ws.router)
