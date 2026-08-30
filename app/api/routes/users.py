@@ -54,16 +54,17 @@ def get_my_stats(
     )
 
 
-@router.get("/search", response_model=UserOut)
+@router.get("/search", response_model=UserPublic)
 def search_user_by_email(
     email: str,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-) -> UserOut:
+) -> UserPublic:
+    """Lookup for "add a friend by email" — returns the public view, never someone else's email."""
     user = db.scalar(select(User).where(User.email == email))
     if user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    return UserOut.model_validate(user)
+    return UserPublic.model_validate(user)
 
 
 @router.get("/{user_id}", response_model=UserPublic)

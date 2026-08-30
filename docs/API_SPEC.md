@@ -99,10 +99,23 @@
 суммы `TimeEntry` всех участников по категории того же `building_family`.
 
 Эндпоинты:
-- `POST /companies`, `GET/PATCH/DELETE /companies/{id}`
+- `POST /companies`, `GET /companies?mine=`, `GET/PATCH/DELETE /companies/{id}`
 - `GET /companies/{id}/members`, `PATCH .../{user_id}` (роль), `DELETE .../{user_id}`
-- `POST /companies/{id}/invites`, `POST /companies/join {invite_code}`
+- `POST /companies/{id}/invites`, `GET /companies/{id}/invites`, `POST /companies/join {invite_code}`
 - `GET /companies/{id}/city`
+
+Принятые решения (см. Приложение В):
+- Пользователь может состоять в **нескольких** компаниях — минуты идут в город
+  каждой из них и в `contribution_minutes_total` соответствующего членства.
+- Минуты начисляются только с момента вступления, задним числом ничего не
+  пересчитывается.
+- Приватная компания невидима извне (404 вместо 403, чтобы не палить
+  существование), публичная видна всем и находится через `GET /companies?mine=false`.
+- Права: `member` — только чтение; `admin` — правка компании и инвайты;
+  `owner` — плюс смена ролей и удаление. Владелец не может выйти, не передав
+  роль; `DELETE /companies/{id}/members/{me}` — это «выйти».
+- Инвайт: `POST /companies/{id}/invites {expires_in_hours, max_uses}` → код;
+  протухший или исчерпанный отдаёт `410`.
 
 ---
 

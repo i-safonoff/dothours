@@ -30,6 +30,12 @@ class OwnerType(enum.StrEnum):
     company = "company"
 
 
+class CompanyRole(enum.StrEnum):
+    owner = "owner"
+    admin = "admin"
+    member = "member"
+
+
 class FriendshipStatus(enum.StrEnum):
     pending = "pending"
     accepted = "accepted"
