@@ -36,6 +36,12 @@ class CompanyRole(enum.StrEnum):
     member = "member"
 
 
+class LeaderboardPeriod(enum.StrEnum):
+    all_time = "all_time"
+    weekly = "weekly"
+    monthly = "monthly"
+
+
 class FriendshipStatus(enum.StrEnum):
     pending = "pending"
     accepted = "accepted"

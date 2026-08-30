@@ -100,6 +100,13 @@ BUILDING_FAMILIES: dict[str, BuildingFamily] = {
 }
 
 
+# Leaderboard weights (Этап 6). Everything counts the same except `custom`,
+# which is un-curated free text and so is worth slightly less than a family
+# whose progression the product actually designed.
+FAMILY_WEIGHTS: dict[str, float] = {key: 1.0 for key in BUILDING_FAMILIES}
+FAMILY_WEIGHTS["custom"] = 0.8
+
+
 def level_for_hours(family_key: str, total_hours: float) -> int:
     family = BUILDING_FAMILIES[family_key]
     level = 1

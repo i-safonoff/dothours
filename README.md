@@ -60,10 +60,10 @@ app/
   building_families.py  static building-level catalog (not a DB table)
 alembic/           migrations
 tests/             pytest suite, one file per resource
-docs/API_SPEC.md   full staged API spec — this repo implements Stages 1–5 and 8
+docs/API_SPEC.md   full staged API spec — this repo implements Stages 1–6 and 8
 ```
 
-## What's implemented (Stages 1–5, 8)
+## What's implemented (Stages 1–6, 8)
 
 - **Auth** — register / login / JWT
 - **Categories** — CRUD, each tied to a `building_family`
@@ -78,7 +78,8 @@ docs/API_SPEC.md   full staged API spec — this repo implements Stages 1–5 an
 - **Feed & profiles** — posts, likes, comments, public user view
 - **Companies** — groups with roles (`owner`/`admin`/`member`), invite codes,
   and a shared city that grows from every member's tracked minutes
+- **World leaderboard** — cached `all_time`/`weekly`/`monthly` city scores for
+  public companies, refreshed lazily on read
 
-The global leaderboard and the isometric city layout (Stages 6–7) are
-documented but not yet implemented — see the spec for why they're sequenced
-later.
+The isometric city layout (Stage 7) is documented but not yet implemented —
+see the spec for why it's sequenced later.
