@@ -45,6 +45,16 @@ notifications_created_total = Counter(
     labelnames=("kind",),
 )
 
+notification_emails_sent_total = Counter(
+    "dothours_notification_emails_sent_total",
+    "Notification emails successfully handed to the SMTP relay",
+)
+
+notification_emails_failed_total = Counter(
+    "dothours_notification_emails_failed_total",
+    "Notification email send attempts that raised, including ones Celery will retry",
+)
+
 events_published_total = Counter(
     "dothours_events_published_total",
     "Realtime events handed to the bus, by event name",

@@ -16,7 +16,7 @@ celery_app = Celery(
     "dothours",
     broker=settings.celery_broker_url,
     backend=settings.celery_result_backend,
-    include=["app.worker.tasks"],
+    include=["app.worker.tasks", "app.core.email"],
 )
 
 celery_app.conf.update(

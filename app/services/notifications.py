@@ -2,7 +2,10 @@
 
 Every notification is a row first; a delivery channel (email, push) is only a
 way to announce a row that already exists. That keeps the API the single
-source of truth and makes the background jobs testable without any transport.
+source of truth and makes the background jobs testable without any transport --
+email included: send_notification_email.delay() only ever runs when
+settings.email_delivery_enabled is explicitly on, which it never is under
+plain pytest.
 """
 
 import uuid
@@ -12,11 +15,14 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
+from app.core.email import send_notification_email
 from app.core.metrics import notifications_created_total
 from app.events import types
 from app.events.bus import bus, user_channel
 from app.models.enums import NotificationKind
 from app.models.notification import Notification
+from app.models.user import User
 
 
 def create_notification(
@@ -43,6 +49,12 @@ def create_notification(
         types.NOTIFICATION_CREATED,
         {"notification_id": str(notification.id), "kind": kind.value},
     )
+
+    if get_settings().email_delivery_enabled:
+        user = db.get(User, user_id)
+        if user is not None and user.email_notifications_enabled:
+            send_notification_email.delay(user.email, title, body)
+
     return notification
 
 
