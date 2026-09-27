@@ -25,6 +25,18 @@ class Settings(BaseSettings):
     # Prometheus scrape endpoint at /metrics.
     metrics_enabled: bool = True
 
+    # Off by default: a fresh checkout has no SMTP relay to send through,
+    # and every existing notification test creates rows with no broker
+    # running. A real deployment turns this on once smtp_host actually
+    # points at something.
+    email_delivery_enabled: bool = False
+    smtp_host: str = "localhost"
+    smtp_port: int = 1025
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_from: str = "no-reply@dothours.app"
+    smtp_use_tls: bool = False
+
 
 @lru_cache
 def get_settings() -> Settings:
