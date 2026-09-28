@@ -44,6 +44,24 @@ def test_update_profile_status_and_avatar(client: TestClient) -> None:
     assert body["avatar_color"] == "#123456"
 
 
+def test_email_notifications_default_on_and_toggle_off(client: TestClient) -> None:
+    me = register_and_login(client)
+    assert me["user"]["email_notifications_enabled"] is True
+
+    response = client.patch(
+        "/api/v1/users/me",
+        json={"email_notifications_enabled": False},
+        headers=auth_headers(me["token"]),
+    )
+    assert response.status_code == 200
+    assert response.json()["email_notifications_enabled"] is False
+
+    # A second GET confirms it persisted, not just that the PATCH echoed
+    # back what it was given.
+    response = client.get("/api/v1/users/me", headers=auth_headers(me["token"]))
+    assert response.json()["email_notifications_enabled"] is False
+
+
 def test_public_profile_hides_email(client: TestClient) -> None:
     me = register_and_login(client, email="ann@example.com", name="Ann")
     other = register_and_login(client, email="bob@example.com", name="Bob")
