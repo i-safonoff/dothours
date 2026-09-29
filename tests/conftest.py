@@ -1,14 +1,32 @@
-from collections.abc import Generator
+import os
 
-import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy.pool import StaticPool
+# Must run before anything below imports app.main (which reaches
+# app.core.config.get_settings() through app.services.notifications ->
+# app.core.email -> app.worker.celery_app at module import time, and
+# get_settings is @lru_cache'd -- once that first call reads Settings(),
+# every test in the process is stuck with whatever it saw). A real .env
+# with EMAIL_DELIVERY_ENABLED=true, left over from testing the feature
+# manually against a real Mailpit, is exactly how this was found: not
+# read here, and the whole suite quietly tried to dispatch real Celery
+# tasks against a broker no test ever starts, some tests taking minutes
+# instead of milliseconds before failing. This line is what makes "no
+# external services needed" (README.md) actually true regardless of
+# whatever a developer's own .env happens to contain, rather than true
+# by accident because nothing had read a settings field with a
+# real-world side effect until now.
+os.environ["EMAIL_DELIVERY_ENABLED"] = "false"
 
-from app.api.deps import get_db
-from app.core.database import Base
-from app.main import app
+from collections.abc import Generator  # noqa: E402
+
+import pytest  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
+from sqlalchemy import create_engine  # noqa: E402
+from sqlalchemy.orm import Session, sessionmaker  # noqa: E402
+from sqlalchemy.pool import StaticPool  # noqa: E402
+
+from app.api.deps import get_db  # noqa: E402
+from app.core.database import Base  # noqa: E402
+from app.main import app  # noqa: E402
 
 
 @pytest.fixture()
