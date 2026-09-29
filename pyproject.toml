@@ -47,5 +47,8 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 ignore = ["B008"]
 
 [tool.pytest.ini_options]
-addopts = "--cov=app --cov-report=term-missing"
+addopts = "--cov=app --cov-report=term-missing -m 'not smtp'"
+markers = [
+    "smtp: needs a real SMTP server (docker run axllent/mailpit), deselected by default",
+]
 
