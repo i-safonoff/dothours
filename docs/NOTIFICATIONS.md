@@ -52,6 +52,7 @@ app/worker/celery_app.py   Celery + the beat schedule
 app/worker/tasks.py        task wrappers: open a session, call the job, commit
 app/worker/jobs.py         the actual logic — plain functions over a Session, no Celery
 app/services/notifications.py  create/read notifications
+app/core/email.py          the email delivery channel — see below for why it isn't in tasks.py
 ```
 
 Jobs never commit anything themselves — the caller owns the transaction.
@@ -73,10 +74,38 @@ poetry run celery -A app.worker.celery_app.celery_app worker --loglevel=info
 poetry run celery -A app.worker.celery_app.celery_app beat --loglevel=info
 ```
 
+## Email
+
+Off by default (`EMAIL_DELIVERY_ENABLED=false`) — a fresh checkout has no
+SMTP relay to send through. Once it's on, `create_notification` sends
+`title` and `body` to `send_notification_email.delay()` after writing the
+row and publishing the WebSocket event, the same "no extra lookups"
+contract the model description above already promises: the task never
+queries the database, so it has nothing left to fail if the row it's
+about hasn't committed yet.
+
+A per-user `email_notifications_enabled` column (default `true`, toggled
+via `PATCH /users/me`) gates it independently of the global setting —
+both have to say yes.
+
+`app/core/email.py` holds the Celery task, not `app/worker/tasks.py`
+where every other task lives: `tasks.py` imports `app.worker.jobs`, which
+imports `app.services.notifications` — the module that has to trigger
+this one. Putting the task in `tasks.py` would close that into an import
+cycle.
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.mail.yml up --build
+```
+
+brings up [Mailpit](https://mailpit.axllent.org/) alongside the rest of
+the stack — `http://localhost:8025` shows what was "sent," and nothing
+leaves the machine.
+
 ## What's not here yet
 
-- External channels (email/push) — the decision was to start with in-app
-  only; `payload` already carries enough for a channel to assemble a
-  message without looking anything up in the database. In-app delivery
-  itself is already realtime: every notification also fires a
-  `notification.created` WebSocket event — see [REALTIME.md](REALTIME.md).
+- **Push notifications.** Email is the first external channel; push would
+  be a second `.delay()` call in the same place, once there's a device
+  token to send it to. In-app delivery is already realtime regardless of
+  either: every notification fires a `notification.created` WebSocket
+  event — see [REALTIME.md](REALTIME.md).

@@ -50,7 +50,7 @@ This is the backend: REST API + WebSocket. The full staged plan lives in
 | **Companies** | `owner`/`admin`/`member` roles, invite codes, a shared city grown from every member's minutes |
 | **World leaderboard** | Cached city scores: `all_time`, `weekly`, `monthly` |
 | **Isometric layout** | Districts and a deterministic tile, rotation and variant per building |
-| **Notifications** | In-app inbox: reminders and streak warnings timed to the user's own timezone |
+| **Notifications** | In-app inbox: reminders and streak warnings timed to the user's own timezone; email delivery is opt-in per user, off by default globally |
 | **Realtime** | WebSocket events for the timer, the city, friends, tasks, and notifications |
 | **Monitoring** | `/metrics` for Prometheus plus a ready-made Grafana dashboard |
 
@@ -208,7 +208,7 @@ database — like a revision re-creating a type that already exists.
 
 ## What's next
 
-- External notification channels: email and push on top of the rows that already exist
+- Push notifications — email now ships (`docs/NOTIFICATIONS.md`); push is the same `.delay()` call in the same place, once there's a device token to send it to
 - A streak cache, once reading it starts to cost something
 - A Redis exporter and Prometheus alerts, once there are real SLOs to alert on
 - Tracing (OpenTelemetry), if the service outgrows metrics and logs

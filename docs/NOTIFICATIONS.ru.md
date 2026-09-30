@@ -50,6 +50,7 @@ app/worker/celery_app.py   Celery + beat schedule
 app/worker/tasks.py        задачи-обёртки: открыть сессию, вызвать джобу, закоммитить
 app/worker/jobs.py         сама логика — обычные функции над Session, без Celery
 app/services/notifications.py  создание/чтение уведомлений
+app/core/email.py          канал доставки почтой — почему не в tasks.py, см. ниже
 ```
 
 Джобы ничего не коммитят сами — транзакцией владеет вызывающий. Благодаря
@@ -71,9 +72,37 @@ poetry run celery -A app.worker.celery_app.celery_app worker --loglevel=info
 poetry run celery -A app.worker.celery_app.celery_app beat --loglevel=info
 ```
 
+## Почта
+
+По умолчанию выключена (`EMAIL_DELIVERY_ENABLED=false`) — у свежего чекаута
+нет SMTP-релея, через который слать. Когда включена, `create_notification`
+после записи строки и публикации WebSocket-события отправляет `title` и
+`body` в `send_notification_email.delay()` — тот же контракт «без лишних
+запросов», что и у модели выше: задача никогда не читает БД, поэтому ей
+нечего сломать, если строка ещё не закоммичена.
+
+Поле `email_notifications_enabled` у пользователя (по умолчанию `true`,
+переключается через `PATCH /users/me`) — второй, независимый выключатель:
+нужно «да» от обоих.
+
+`app/core/email.py` держит задачу Celery, а не `app/worker/tasks.py`, где
+живут все остальные: `tasks.py` импортирует `app.worker.jobs`, который
+импортирует `app.services.notifications` — модуль, который и должен
+запускать эту задачу. Помести задачу в `tasks.py` — получился бы цикл
+импортов.
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.mail.yml up --build
+```
+
+поднимает [Mailpit](https://mailpit.axllent.org/) вместе с остальным
+стеком — на `http://localhost:8025` видно, что было «отправлено», и
+ничего не уходит за пределы машины.
+
 ## Чего пока нет
 
-- Внешних каналов (email/push) — решено начать с in-app; `payload` уже
-  достаточно, чтобы канал собрал сообщение, не заглядывая в БД. Сама
-  in-app доставка уже реалтаймовая: каждое уведомление ещё и шлёт
-  WebSocket-событие `notification.created` — см. [REALTIME.md](REALTIME.ru.md).
+- **Пуш-уведомлений.** Почта — первый внешний канал; пуш стал бы вторым
+  вызовом `.delay()` в том же месте, как только появится токен устройства,
+  куда слать. In-app доставка в любом случае уже реалтаймовая: каждое
+  уведомление шлёт WebSocket-событие `notification.created` — см.
+  [REALTIME.md](REALTIME.ru.md).
