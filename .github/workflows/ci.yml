@@ -52,6 +52,43 @@ jobs:
       - name: Test
         run: poetry run pytest
 
+  email:
+    name: Email delivery (SMTP)
+    runs-on: ubuntu-latest
+    services:
+      mailpit:
+        image: axllent/mailpit:latest
+        ports:
+          - 1026:1025
+          - 8026:8025
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Poetry
+        run: pipx install poetry
+
+      - name: Install dependencies
+        run: poetry install
+
+      # No health-cmd on the mailpit service: the image is a single static
+      # binary with no shell tools GitHub Actions could exec a check with.
+      # It binds its ports fast, but "fast" isn't "before this step starts" —
+      # a bounded retry here is cheaper than a flaky first run every time.
+      - name: Wait for Mailpit
+        run: |
+          for _ in $(seq 1 20); do
+            curl -fsS http://localhost:8026/api/v1/messages >/dev/null 2>&1 && exit 0
+            sleep 1
+          done
+          echo "Mailpit never answered on :8026"; exit 1
+
+      - name: Test
+        run: poetry run pytest -m smtp
+
   migrations:
     name: Migrations (PostgreSQL)
     runs-on: ubuntu-latest

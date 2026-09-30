@@ -1,6 +1,6 @@
 # Wrappers around commands that are otherwise easy to forget.
 .DEFAULT_GOAL := help
-.PHONY: help install lint fmt test cov run migrate migration up down logs stack-up stack-down worker beat smoke
+.PHONY: help install lint fmt test cov run migrate migration up down logs stack-up stack-down mail-up mail-down worker beat smoke
 
 help:  ## Show this list
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -52,6 +52,12 @@ stack-up:  ## Bring up everything, including Prometheus and Grafana
 
 stack-down:  ## Stop everything, including monitoring
 	docker compose -f docker-compose.yml -f docker-compose.observability.yml down
+
+mail-up:  ## Bring up the stack with Mailpit, so EMAIL_DELIVERY_ENABLED=true has somewhere to send to
+	docker compose -f docker-compose.yml -f docker-compose.mail.yml up --build -d
+
+mail-down:  ## Stop the stack and Mailpit
+	docker compose -f docker-compose.yml -f docker-compose.mail.yml down
 
 smoke:  ## Check that a running stack responds
 	@curl -fsS http://localhost:8000/health && echo " — API is up"

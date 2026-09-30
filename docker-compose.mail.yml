@@ -1,0 +1,16 @@
+# A local SMTP server that actually receives what the API sends, kept out
+# of the default compose file for the same reason docker-compose.observability.yml
+# is: `docker compose up` stays a one-service dev loop. Run alongside it:
+#   docker compose -f docker-compose.yml -f docker-compose.mail.yml up
+#
+# Point the api service at it (both already set in .env.example):
+#   EMAIL_DELIVERY_ENABLED=true
+#   SMTP_HOST=mailpit
+#   SMTP_PORT=1025
+services:
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "8025:8025"  # web UI + REST API — open http://localhost:8025 to read what was "sent"
+      - "1025:1025"  # SMTP
